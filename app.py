@@ -92,23 +92,45 @@ def start_game(ack, say, command):
         say("Game not found!")
         return
 
-    game.game_list.get(int(command['text'])).start()
+    cur_game = game.game_list.get(int(command['text']))
+
+    if not cur_game.start():
+        say("Game already started!")
+        return
+
+    say(f"Game {command['text']} has started!")
+    say(cur_game.get_players())
+    say(cur_game.get_up_next_msg())
+    say(cur_game.get_available_teams())
 
 
 @app.message(re.compile("^[0-9]+$"))
 def make_pick(ack, message, say):
     ack()
 
-    user = None
-
     for i in game.game_list:
+        if not game.game_list[i].started:
+            continue
         if game.game_list[i].get_player(message['user']) is not None:
             cur_game = game.game_list[i]
             user = cur_game.get_player(message['user'])
 
+            if cur_game.up_next[0] != user:
+                say("Not your turn!")
+                return
+
             if user.add_pick(int(message['text']), cur_game.teams):
                 say(f"<@{message['user']}> has picked {message['text']}!")
+                cur_game.up_next.pop()
+
+                if len(cur_game.up_next) == 0:
+                    say("Draft complete!")
+                    say(cur_game.get_players())
+                    cur_game.completed = True
+                    return
+
                 say(cur_game.get_players())
+                say(cur_game.get_up_next_msg())
                 say(cur_game.get_available_teams())
             else:
                 say("Invalid pick!")

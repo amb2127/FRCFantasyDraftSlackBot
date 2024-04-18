@@ -1,3 +1,5 @@
+import random
+
 import requests
 import secret
 
@@ -26,7 +28,8 @@ def delete(game_id: int):
 
 
 class Game:
-    def __init__(self, teams: List[int], players: List[Player], max_players: int, host_uid: str, channel_name: str):
+    def __init__(self, teams: List[int], players: List[Player], max_players: int,
+                 host_uid: str, channel_name: str, team_count: int = 4):
         self.teams = teams
         self.players = players
         self.max_players = max_players
@@ -37,6 +40,9 @@ class Game:
         self.started = False
         self.host_uid = host_uid
         self.channel_name = channel_name
+        self.up_next = []
+        self.team_count = team_count
+        self.completed = False
         game_list.update({self.game_id: self})
 
     def get_available_teams(self) -> str:
@@ -72,7 +78,23 @@ class Game:
         self.players.append(player)
 
     def start(self):
-        self.started = True
+        if not self.completed or not self.started:
+            self.started = True
+            random.shuffle(self.players)
+            for i in range(self.team_count):
+                temp = self.players.copy()
+                if i % 2 != 0:
+                    temp.reverse()
+                for j in temp:
+                    self.up_next.append(j)
+            return True
+        else:
+            return False
+
+    def get_up_next_msg(self):
+        if len(self.up_next) == 1:
+            return f"<@{self.up_next[0].uid}> is picking, nobody on deck"
+        return f"<@{self.up_next[0].uid}> is picking, <@{self.up_next[1].uid}> on deck"
 
 
 def get_team_list_from_event(event_code: str) -> List[int]:
