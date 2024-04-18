@@ -57,7 +57,7 @@ class Game:
 
         for i in self.players:
             player_list += f"{i.name}" + " " * (12 - len(i.name))
-            for j in range(4):
+            for j in range(self.team_count):
                 if j < len(i.picks):
                     player_list += f"|{i.picks[j]}"
                 else:
@@ -82,9 +82,10 @@ class Game:
             self.started = True
             random.shuffle(self.players)
             for i in range(self.team_count):
-                temp = self.players.copy()
-                if i % 2 != 0:
-                    temp.reverse()
+                if i % 2 == 0:
+                    temp = self.players.copy()
+                else:
+                    temp = self.players.copy()[::-1]
                 for j in temp:
                     self.up_next.append(j)
             return True

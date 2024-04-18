@@ -105,7 +105,7 @@ def start_game(ack, say, command):
 
 
 @app.message(re.compile("^[0-9]+$"))
-def make_pick(ack, message, say):
+def make_pick(ack, message, say, body, logger):
     ack()
 
     for i in game.game_list:
@@ -116,17 +116,17 @@ def make_pick(ack, message, say):
             user = cur_game.get_player(message['user'])
 
             if cur_game.up_next[0] != user:
-                say("Not your turn!")
                 return
 
             if user.add_pick(int(message['text']), cur_game.teams):
                 say(f"<@{message['user']}> has picked {message['text']}!")
-                cur_game.up_next.pop()
+                cur_game.up_next.pop(0)
 
                 if len(cur_game.up_next) == 0:
                     say("Draft complete!")
                     say(cur_game.get_players())
                     cur_game.completed = True
+                    game.delete()
                     return
 
                 say(cur_game.get_players())
@@ -134,6 +134,7 @@ def make_pick(ack, message, say):
                 say(cur_game.get_available_teams())
             else:
                 say("Invalid pick!")
+    logger.info(body)
 
 
 # Add functionality here later
