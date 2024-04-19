@@ -59,7 +59,7 @@ class Game:
             player_list += f"{i.name}" + " " * (12 - len(i.name))
             for j in range(self.team_count):
                 if j < len(i.picks):
-                    player_list += f"|{i.picks[j]}"
+                    player_list += f"|{i.picks[j]}" + " " * (4 - len(str(i.picks[j])))
                 else:
                     player_list += "|"
             player_list += "\n"

@@ -74,8 +74,8 @@ def list_games(ack, say):
 
     games = ""
 
-    for games in game.game_list:
-        games += f"Game ID: {game.game_list[game].game_id}\n"
+    for cur_game in game.game_list:
+        games += f"Game ID: {game.game_list[cur_game].game_id}\n"
 
     say(games)
 
@@ -126,7 +126,7 @@ def make_pick(ack, message, say, body, logger):
                     say("Draft complete!")
                     say(cur_game.get_players())
                     cur_game.completed = True
-                    game.delete()
+                    game.delete(cur_game.game_id)
                     return
 
                 say(cur_game.get_players())
