@@ -1,3 +1,5 @@
+DISCLAIMER: not very thoroughly tested, may or may not successfully work
+
 to run on your own machine:
 
 create secret.py file, and put 
