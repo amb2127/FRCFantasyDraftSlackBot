@@ -58,7 +58,7 @@ def join_game(ack, say, command):
     user = game.Player(get_username_from_id(command['user_id']), command['user_id'])
 
     for i in game.game_list:
-        if user in game.game_list[i].players:
+        if game.game_list[i].get_player(command['user_id']) is not None:
             say("You are already in a game!")
             return
 
