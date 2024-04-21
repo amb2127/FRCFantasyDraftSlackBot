@@ -21,7 +21,7 @@ def create_new_game(ack, say, command):
     ack()
 
     new_game = game.Game(game.get_team_list_from_event(command['text']), [],
-                         8, command['user_id'], command['channel_name'])
+                         8, command['user_id'], command['channel_name'], command['text'])
     say(f"<@{command['user_id']}> has started a new game with event {command['text']}!\nID: {new_game.game_id}")
 
     say(new_game.get_players())
@@ -104,6 +104,31 @@ def start_game(ack, say, command):
     say(cur_game.get_available_teams())
 
 
+@app.command("/scores")
+def get_scores(ack, say, command):
+    ack()
+
+    if re.match("^[0-9]+$", command['text']) is None:
+        say("Invalid game ID")
+        return
+
+    if int(command['text']) not in game.game_list:
+        say("Game not found!")
+        return
+
+    cur_game = game.game_list.get(int(command['text']))
+
+    if not cur_game.completed:
+        say("Cannot score an incomplete game!")
+        return
+
+    scores = cur_game.calculate_scores_and_print()
+
+    if scores is not None:
+        game.delete(cur_game.game_id)
+        say(scores)
+
+
 @app.message(re.compile("^[0-9]+$"))
 def make_pick(ack, message, say, body, logger):
     ack()
@@ -118,15 +143,14 @@ def make_pick(ack, message, say, body, logger):
             if cur_game.up_next[0] != user:
                 return
 
-            if user.add_pick(int(message['text']), cur_game.teams):
+            if cur_game.add_pick(int(message['text']), user.uid):
                 say(f"<@{message['user']}> has picked {message['text']}!")
                 cur_game.up_next.pop(0)
 
                 if len(cur_game.up_next) == 0:
                     say("Draft complete!")
                     say(cur_game.get_players())
-                    cur_game.completed = True
-                    game.delete(cur_game.game_id)
+                    cur_game.end()
                     return
 
                 say(cur_game.get_players())
@@ -136,8 +160,6 @@ def make_pick(ack, message, say, body, logger):
                 say("Invalid pick!")
     logger.info(body)
 
-
-# Add functionality here later
 
 # Ready? Start your app!
 if __name__ == "__main__":
