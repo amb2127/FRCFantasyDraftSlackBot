@@ -39,6 +39,7 @@ class Game:
         self.completed = False
         self.picks = dict()
         self.event_code = event_code
+        self.event_name = get_event_name(event_code)
         game_list.update({self.game_id: self})
 
     def get_available_teams(self) -> str:
@@ -49,7 +50,7 @@ class Game:
         return draft_pool
 
     def get_players(self) -> str:
-        player_list = "```\nDraft: \n"
+        player_list = f"```\n{self.event_name} Draft: \n"
 
         for i in self.players:
             player_list += f"{i.name}" + " " * (12 - len(i.name))
@@ -205,14 +206,17 @@ def get_score(team_num: int, event_code: str) -> int:
                 award_pts += 7
             else:
                 award_pts += 2
-
-    print(str(team_num) + "'s qual score: " + str(qual_pts))
-    print(str(team_num) + "'s playoff score: " + str(playoff_pts))
-    print(str(team_num) + "'s award score: " + str(award_pts))
     return math.ceil(qual_pts + playoff_pts + award_pts)
 
 
+def get_event_name(event_code: str) -> str:
+    url = "https://www.thebluealliance.com/api/v3/event/" + event_code + "/simple"
+    params = {"X-TBA-Auth-Key": secret.TBA_API_KEY}
 
+    r = requests.get(url=url, params=params)
+    data = r.json()
+
+    return str(data["year"]) + " " + data["name"]
 
 
 
