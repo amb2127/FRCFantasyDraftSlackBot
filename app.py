@@ -130,7 +130,7 @@ def get_scores(ack, say, command):
 
 
 @app.message(re.compile("^[0-9]+$"))
-def make_pick(ack, message, say, body, logger):
+def make_pick(ack, message, say):
     ack()
 
     for i in game.game_list:
@@ -158,7 +158,51 @@ def make_pick(ack, message, say, body, logger):
                 say(cur_game.get_available_teams())
             else:
                 say("Invalid pick!")
-    logger.info(body)
+
+
+@app.message(re.compile("^[0-9]+ [0-9]+$"))
+def make_double_pick(ack, message, say):
+    ack()
+
+    for i in game.game_list:
+        if not game.game_list[i].started:
+            continue
+        if game.game_list[i].get_player(message['user']) is not None:
+            cur_game = game.game_list[i]
+            user = cur_game.get_player(message['user'])
+
+            if len(cur_game.up_next) < 2:
+                return
+
+            if cur_game.up_next[0] != user or cur_game.up_next[1] != user:
+                return
+
+            picks = message['text'].split(" ")
+
+            if cur_game.add_pick(int(picks[0]), user.uid):
+                if cur_game.add_pick(int(picks[1]), user.uid):
+                    say(f"<@{message['user']}> has picked {picks[0]} and {picks[1]}!")
+                    cur_game.up_next.pop(0)
+                    cur_game.up_next.pop(0)
+
+                    if len(cur_game.up_next) == 0:
+                        say("Draft complete!")
+                        say(cur_game.get_players())
+                        cur_game.end()
+                        return
+
+                    say(cur_game.get_players())
+                    say(cur_game.get_up_next_msg())
+                    say(cur_game.get_available_teams())
+                else:
+                    say(f"<@{message['user']}> has picked {picks[0]}, but {picks[1]} is an invalid pick!")
+                    cur_game.up_next.pop(0)
+
+                    say(cur_game.get_players())
+                    say(cur_game.get_up_next_msg())
+                    say(cur_game.get_available_teams())
+            else:
+                say("Invalid picks!")
 
 
 # Ready? Start your app!

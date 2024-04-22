@@ -159,9 +159,9 @@ def get_score(team_num: int, event_code: str) -> int:
     for i in range(len(sort_order_info)):
         if sort_order_info[i]["name"] == "Ranking Points":
             rp_id = i
-        elif sort_order_info[i]["name"] == "Average Auto":
+        elif sort_order_info[i]["name"] == "Avg Auto":
             avg_auto_id = i
-        elif sort_order_info[i]["name"] == "Average Match":
+        elif sort_order_info[i]["name"] == "Avg Match":
             avg_match_id = i
 
     ranking_pts = data["qual"]["ranking"]["sort_orders"][rp_id] * data["qual"]["ranking"]["matches_played"]
@@ -206,6 +206,7 @@ def get_score(team_num: int, event_code: str) -> int:
                 award_pts += 7
             else:
                 award_pts += 2
+
     return math.ceil(qual_pts + playoff_pts + award_pts)
 
 
