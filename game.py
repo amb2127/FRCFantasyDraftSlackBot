@@ -197,9 +197,9 @@ def get_score(team_num: int, event_code: str) -> int:
     else:
         for award in awards:
             if "Winner" in award["name"]:
-                award_pts += 5
+                playoff_pts += 5
             elif "Finalist" in award["name"]:
-                award_pts += 1
+                playoff_pts += 1
             elif "Engineering Inspiration" in award["name"]:
                 award_pts += 7
             elif "Chairman" in award["name"] or "FIRST Impact" in award["name"]:
@@ -207,7 +207,12 @@ def get_score(team_num: int, event_code: str) -> int:
             else:
                 award_pts += 2
 
-    return math.ceil(qual_pts + playoff_pts + award_pts)
+    raw_score = math.ceil(qual_pts + playoff_pts + award_pts)
+
+    if team_num == 5199:
+        raw_score -= 15
+
+    return raw_score
 
 
 def get_event_name(event_code: str) -> str:
