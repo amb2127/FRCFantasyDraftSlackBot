@@ -62,6 +62,10 @@ def join_game(ack, say, command):
             say("You are already in a game!")
             return
 
+    if game.game_list.get(int(command['text'])).started:
+        say("Game already started!")
+        return
+
     game.game_list.get(int(command['text'])).add_player(user)
     say(f"<@{command['user_id']}> has joined game {command['text']}!")
     say(game.game_list.get(int(command['text'])).get_players())
@@ -93,6 +97,10 @@ def start_game(ack, say, command):
         return
 
     cur_game = game.game_list.get(int(command['text']))
+
+    if cur_game.host_uid != command['user_id']:
+        say("You are not the host of this game!")
+        return
 
     if not cur_game.start():
         say("Game already started!")
