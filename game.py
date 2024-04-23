@@ -1,4 +1,5 @@
 import app
+import leaderboard
 import math
 import random
 import requests
@@ -119,11 +120,13 @@ class Game:
 
             scores = dict(sorted(scores.items(), key=itemgetter(1)))
 
+            lb_msg = leaderboard.update_scores(scores)
+
             scores_list = "```\nScores: \n"
             for player in scores:
                 scores_list += f"{app.get_username_from_id(player)}: {scores.get(player)}\n"
             scores_list += "```"
-            return scores_list
+            return scores_list, lb_msg
 
 
 def get_team_list_from_event(event_code: str) -> List[int]:

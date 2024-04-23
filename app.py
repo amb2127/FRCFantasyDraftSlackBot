@@ -3,6 +3,7 @@ import re
 
 import game
 import secret
+import leaderboard
 from slack_bolt import App
 
 # Initialize your app with your bot token and signing secret
@@ -130,11 +131,12 @@ def get_scores(ack, say, command):
         say("Cannot score an incomplete game!")
         return
 
-    scores = cur_game.calculate_scores_and_print()
+    scores, lb = cur_game.calculate_scores_and_print()
 
     if scores is not None:
         game.delete(cur_game.game_id)
         say(scores)
+        say(lb)
 
 
 @app.message(re.compile("^[0-9]+$"))

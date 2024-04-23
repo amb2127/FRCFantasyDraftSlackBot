@@ -1,5 +1,7 @@
 import app
+import game
 import pickle
+import statistics
 
 
 class LBEntry:
@@ -10,8 +12,57 @@ class LBEntry:
     def __str__(self):
         return f"{app.get_username_from_id(self.uid)}: {self.elo}"
 
+    def __lt__(self, other):
+        return self.elo < other.elo
 
-def get_leaderboard() -> list[LBEntry]:
+
+class LB:
+    def __init__(self, lb: list[LBEntry]):
+        self.lb = lb
+
+    def get_player(self, uid: str) -> LBEntry:
+        for i in self.lb:
+            if i.uid == uid:
+                return i
+
+        print("creating player for ID", uid)
+        new_player = LBEntry(uid, 1000)
+        self.lb.append(new_player)
+        return new_player
+
+
+def update_scores(score_list):
+    score_data = []
+
+    for player in score_list:
+        score_data.append(score_list.get(player))
+
+    score_data.sort()
+
+    mean_score = statistics.mean(score_data)
+    if len(score_data) > 2:
+        stdev_score = statistics.stdev(score_data)
+    else:
+        stdev_score = max(score_data) - min(score_data)
+
+    leaderboard_msg = "```\nLeaderboard: \n"
+
+    lb = get_leaderboard()
+    for player in score_list:
+        lb_player = lb.get_player(player)
+        leaderboard_msg += f"{app.get_username_from_id(player)}: {lb_player.elo} -> "
+        if not stdev_score == 0:
+            lb_player.elo += 30 * (score_list.get(player) - mean_score) / stdev_score
+        if lb_player.elo < 100:
+            lb_player.elo = 100
+        leaderboard_msg += f"{lb_player.elo}\n"
+    add_leaderboard(lb)
+
+    leaderboard_msg += "```"
+    return leaderboard_msg
+
+
+def get_leaderboard() -> LB:
     with open("leaderboard.txt", "rb") as f:
         lb = pickle.load(f)
     return lb
@@ -25,7 +76,8 @@ def leaderboard_to_string(lb: list[LBEntry]):
     return lb_str
 
 
-def add_leaderboard(lb: list[LBEntry]):
+def add_leaderboard(lb: LB):
+    lb.lb.sort()
+
     with open("leaderboard.txt", "wb") as f:
         pickle.dump(lb, f)
-
