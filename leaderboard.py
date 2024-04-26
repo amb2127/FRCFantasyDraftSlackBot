@@ -1,5 +1,5 @@
 import app
-import game
+import math
 import pickle
 import statistics
 
@@ -51,11 +51,17 @@ def update_scores(score_list):
     for player in score_list:
         lb_player = lb.get_player(player)
         leaderboard_msg += f"{app.get_username_from_id(player)}: {lb_player.elo} -> "
+        elo_add = 0
         if not stdev_score == 0:
-            lb_player.elo += 30 * (score_list.get(player) - mean_score) / stdev_score
+            elo_add = round((30 * (score_list.get(player) - mean_score) / stdev_score))
+        lb_player.elo += elo_add
         if lb_player.elo < 100:
             lb_player.elo = 100
-        leaderboard_msg += f"{lb_player.elo}\n"
+        leaderboard_msg += f"{lb_player.elo} "
+        if elo_add < 0:
+            leaderboard_msg += f"({elo_add})\n"
+        else:
+            leaderboard_msg += f"(+{elo_add})\n"
     add_leaderboard(lb)
 
     leaderboard_msg += "```"

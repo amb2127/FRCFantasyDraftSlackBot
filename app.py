@@ -217,4 +217,7 @@ def make_double_pick(ack, message, say):
 
 # Ready? Start your app!
 if __name__ == "__main__":
+    if not os.path.isfile("./leaderboard.txt"):
+        leaderboard.add_leaderboard(leaderboard.LB([]))
+
     app.start(port=int(os.environ.get("PORT", 3000)))
