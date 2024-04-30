@@ -1,5 +1,8 @@
+import datetime
 import os
 import re
+import requests
+import statbotics
 
 import game
 import secret
@@ -15,6 +18,95 @@ app = App(
 
 def get_username_from_id(user_id: str) -> str:
     return app.client.users_profile_get(user=user_id)['profile']['first_name']
+
+
+def process_team_data(team_num: int):
+    year = datetime.date.today().year
+
+    url = "https://www.thebluealliance.com/api/v3/team/frc" + str(team_num)
+    district_url = "https://www.thebluealliance.com/api/v3/team/frc" + str(team_num) + "/districts"
+    events_url = "https://www.thebluealliance.com/api/v3/team/frc" + str(team_num) + "/events/" + str(year) + "/simple"
+    params = {"X-TBA-Auth-Key": secret.TBA_API_KEY}
+
+    r = requests.get(url=url, params=params)
+    data = r.json()
+
+    sb = statbotics.Statbotics()
+    epa = sb.get_team_year(team_num, year)['epa_end']
+
+    district_r = requests.get(url=district_url, params=params)
+    district_data = district_r.json()
+
+    if len(district_data) > 0:
+        district_name = district_data[0]['display_name']
+    else:
+        district_name = "N/A"
+
+    event_r = requests.get(url=events_url, params=params)
+    event_data = event_r.json()
+
+    events = ""
+
+    if event_data is not None:
+        event_data = sorted(event_data, key=lambda x: x['start_date'])
+        for event in event_data:
+            events += "\n" + event['name']
+
+    blocks = [
+        {
+            "type": "section",
+            "text": {
+                "type": "mrkdwn",
+                "text": f"*Team {team_num} - {data['nickname']}*"
+            },
+            "accessory": {
+                "type": "image",
+                "image_url": f"https://frcavatars.herokuapp.com/get_image?team={str(team_num)}",
+                "alt_text": str(team_num)
+            }
+        },
+        {
+            "type": "section",
+            "fields": [
+                {
+                    "type": "mrkdwn",
+                    "text": f"*Location:*\n{data['city']}, {data['state_prov']}, {data['country']}"
+                },
+                {
+                    "type": "mrkdwn",
+                    "text": f"*Rookie Year:*\n{data['rookie_year']}"
+                }
+            ]
+        },
+        {
+            "type": "section",
+            "fields": [
+                {
+                    "type": "mrkdwn",
+                    "text": f"*Website:*\n{data['website']}"
+                },
+                {
+                    "type": "mrkdwn",
+                    "text": f"*District:*\n{district_name}"
+                }
+            ]
+        },
+        {
+            "type": "section",
+            "fields": [
+                {
+                    "type": "mrkdwn",
+                    "text": f"*Events:*{events}"
+                },
+                {
+                    "type": "mrkdwn",
+                    "text": f"*EPA:*\n{epa}"
+                }
+            ]
+        }
+    ]
+
+    return blocks
 
 
 @app.command("/new_game")
@@ -121,6 +213,19 @@ def start_game(ack, say, command):
     say(cur_game.get_players())
     say(cur_game.get_up_next_msg())
     say(cur_game.get_available_teams())
+
+
+@app.command("/team_info")
+def post_team_info(ack, say, command):
+    ack()
+
+    if re.match("^[0-9]+$", command['text']) is None:
+        say("Invalid team number")
+        return
+
+    blocks = process_team_data(int(command['text']))
+
+    say(blocks=blocks, text=f"Team {command['text']} Info")
 
 
 @app.command("/scores")
