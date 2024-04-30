@@ -6,6 +6,7 @@ import requests
 import secret
 
 from operator import itemgetter
+from pyerf import erfinv
 from typing import List
 
 game_list = dict()
@@ -153,67 +154,63 @@ def get_score(team_num: int, event_code: str) -> int:
     r = requests.get(url=url, params=params)
     data = r.json()
 
-    sort_order_info = data["qual"]["sort_order_info"]
+    qual = data["qual"]
+    _r = int(qual["ranking"]["rank"])
+    _n = int(qual["num_teams"])
+    _alpha = 1.07
 
-    rp_id = 0
-    avg_auto_id = 0
-    avg_match_id = 0
+    qual_points = math.ceil(erfinv((_n - 2*_r + 2) / (_alpha * _n)) * (10 / erfinv(1 / _alpha)) + 12)
 
-    for i in range(len(sort_order_info)):
-        if sort_order_info[i]["name"] == "Ranking Points":
-            rp_id = i
-        elif sort_order_info[i]["name"] == "Avg Auto":
-            avg_auto_id = i
-        elif sort_order_info[i]["name"] == "Avg Match":
-            avg_match_id = i
+    alliance = data["alliance"]
+    alliance_points = 0
 
-    ranking_pts = data["qual"]["ranking"]["sort_orders"][rp_id] * data["qual"]["ranking"]["matches_played"]
-    auto_pts = data["qual"]["ranking"]["sort_orders"][avg_auto_id]
-    match_pts = data["qual"]["ranking"]["sort_orders"][avg_match_id]
-
-    qual_pts = ranking_pts * 0.8 + auto_pts * 0.3 + match_pts * 0.2
-
-    playoff_pts = 0
-
-    if data["playoff"] is not None:
-        if data["playoff"]["playoff_type"] == 10:
-            if data["playoff"]["double_elim_round"] == "Round 2":
-                playoff_pts = 3
-            elif data["playoff"]["double_elim_round"] == "Round 3":
-                playoff_pts = 5
-            elif data["playoff"]["double_elim_round"] == "Round 4":
-                playoff_pts = 8
-            elif data["playoff"]["double_elim_round"] == "Finals":
-                playoff_pts = 10
-            else:
-                playoff_pts = 0
+    if alliance is not None:
+        if alliance["pick"] == 3:
+            alliance_points = 0
+        elif alliance["pick"] == 2:
+            alliance_points = alliance["number"]
         else:
-            playoff_pts = 0
+            alliance_points = 17 - alliance["number"]
 
-    s = requests.get(url=award_url, params=params)
-    awards = s.json()
+    playoff = data["playoff"]
+    playoff_points = 0
 
-    award_pts = 0
+    if playoff is not None:
+        if playoff["playoff_type"] == 10:
+            if playoff["double_elim_round"] == "Round 4":
+                playoff_points = 7
+            elif playoff["double_elim_round"] == "Round 5":
+                playoff_points = 10
+            elif playoff["double_elim_round"] == "Finals":
+                playoff_points = 20
 
-    if awards is None:
-        award_pts = 0
-    else:
-        for award in awards:
-            if "Winner" in award["name"]:
-                playoff_pts += 5
-            elif "Finalist" in award["name"]:
-                playoff_pts += 1
-            elif "Engineering Inspiration" in award["name"]:
-                award_pts += 7
-            elif "Chairman" in award["name"] or "FIRST Impact" in award["name"]:
-                award_pts += 7
-            else:
-                award_pts += 2
+            if playoff["status"] == "won":
+                playoff_points += 10
+        else:
+            playoff_points = playoff["record"]["wins"] * 5
 
-    raw_score = math.ceil(qual_pts + playoff_pts + award_pts)
+    award_r = requests.get(url=award_url, params=params)
+    award_data = award_r.json()
+
+    award_points = 0
+
+    for i in award_data:
+        if "Finalist" in i["name"] or "Winners" in i["name"]:
+            award_points += 0
+        elif "Chairman's" in i["name"] or "Impact" in i["name"]:
+            award_points += 10
+        elif "Rookie All Star" in i["name"] or "Engineering Inspiration" in i["name"]:
+            award_points += 8
+        else:
+            award_points += 5
+
+    print("Team", team_num, "\nQual:", qual_points, "\nAlliance:", alliance_points,
+          "\nPlayoff:", playoff_points, "\nAward:", award_points)
+
+    raw_score = qual_points + alliance_points + playoff_points + award_points
 
     if team_num == 5199:
-        raw_score -= 15
+        raw_score -= 10
 
     return raw_score
 
