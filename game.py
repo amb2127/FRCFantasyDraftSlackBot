@@ -195,7 +195,7 @@ def get_score(team_num: int, event_code: str) -> int:
     award_points = 0
 
     for i in award_data:
-        if "Finalist" in i["name"] or "Winners" in i["name"]:
+        if "Finalist" in i["name"] or "Winners" in i["name"] or "Winner" in i["name"]:
             award_points += 0
         elif "Chairman's" in i["name"] or "Impact" in i["name"]:
             award_points += 10
