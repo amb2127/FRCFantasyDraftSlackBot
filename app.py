@@ -21,9 +21,19 @@ def get_username_from_id(user_id: str) -> str:
 def create_new_game(ack, say, command):
     ack()
 
-    new_game = game.Game(game.get_team_list_from_event(command['text']), [],
-                         8, command['user_id'], command['channel_name'], command['text'])
-    say(f"<@{command['user_id']}> has started a new game with event {command['text']}!\nID: {new_game.game_id}")
+    if str(command['text']).count(" ") == 1:
+        event_code, max_teams = str(command['text']).split()
+    elif str(command['text']).count(" ") == 0:
+        event_code = command['text']
+        max_teams = 4
+    else:
+        say("Invalid command args!")
+        return
+
+    new_game = game.Game(game.get_team_list_from_event(event_code), [],
+                         command['user_id'], command['channel_name'], event_code, int(max_teams))
+    say(f"<@{command['user_id']}> has started a new game with event {event_code}!"
+        f"\nID: {new_game.game_id}\nPicks: {max_teams}")
 
     say(new_game.get_players())
     say(new_game.get_available_teams())

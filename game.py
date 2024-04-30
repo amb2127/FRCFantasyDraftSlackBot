@@ -24,11 +24,11 @@ def delete(game_id: int):
 
 
 class Game:
-    def __init__(self, teams: List[int], players: List[Player], max_players: int,
+    def __init__(self, teams: List[int], players: List[Player],
                  host_uid: str, channel_name: str, event_code: str, team_count: int = 4):
         self.teams = teams
         self.players = players
-        self.max_players = max_players
+        self.max_players = math.floor(len(teams) / team_count)
         i = 0
         while i in game_list:
             i += 1
@@ -99,7 +99,7 @@ class Game:
 
     def add_pick(self, team_num: int, player_uid: str) -> bool:
         picklist = self.picks.get(player_uid)
-        if team_num in self.teams and len(picklist) < 4:
+        if team_num in self.teams and len(picklist) < self.team_count:
             picklist.append(team_num)
             self.teams.remove(team_num)
             return True
