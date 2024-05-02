@@ -27,3 +27,13 @@ message.groups
 message.im
 message.mpim
 ```
+
+commands to implement:
+```
+/team_info
+/new_game
+/join_game
+/end
+/game_list
+/start
+```
