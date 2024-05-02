@@ -83,7 +83,7 @@ def process_team_data(team_num: int):
             "fields": [
                 {
                     "type": "mrkdwn",
-                    "text": f"*Website:*\n{data['website']}"
+                    "text": f"*Website:*\n<{data['website']}>"
                 },
                 {
                     "type": "mrkdwn",
@@ -225,7 +225,7 @@ def post_team_info(ack, say, command):
 
     blocks = process_team_data(int(command['text']))
 
-    say(blocks=blocks, text=f"Team {command['text']} Info")
+    say(blocks=blocks, text=f"Team {command['text']} Info", unfurl_links=False)
 
 
 @app.command("/scores")
