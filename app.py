@@ -20,6 +20,16 @@ def get_username_from_id(user_id: str) -> str:
     return app.client.users_profile_get(user=user_id)['profile']['first_name']
 
 
+def check_if_event_finished(event_code: str) -> bool:
+    url = "https://www.thebluealliance.com/api/v3/event/" + event_code + "/simple"
+    params = {"X-TBA-Auth-Key": secret.TBA_API_KEY}
+
+    r = requests.get(url=url, params=params)
+    data = r.json()
+
+    return datetime.date.today() > datetime.datetime.strptime(data['end_date'], "%Y-%m-%d").date()
+
+
 def process_team_data(team_num: int):
     year = datetime.date.today().year
 
@@ -244,6 +254,10 @@ def get_scores(ack, say, command):
 
     if not cur_game.completed:
         say("Cannot score an incomplete game!")
+        return
+
+    if not check_if_event_finished(cur_game.event_code):
+        say("Event has not finished yet!")
         return
 
     scores, lb = cur_game.calculate_scores_and_print()

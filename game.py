@@ -159,7 +159,7 @@ def get_score(team_num: int, event_code: str) -> int:
     _n = int(qual["num_teams"])
     _alpha = 1.07
 
-    qual_points = math.ceil(erfinv((_n - 2*_r + 2) / (_alpha * _n)) * (10 / erfinv(1 / _alpha)) + 12)
+    qual_points = math.ceil(erfinv((_n - 2 * _r + 2) / (_alpha * _n)) * (10 / erfinv(1 / _alpha)) + 12)
 
     alliance = data["alliance"]
     alliance_points = 0
@@ -223,6 +223,3 @@ def get_event_name(event_code: str) -> str:
     data = r.json()
 
     return str(data["year"]) + " " + data["name"]
-
-
-
