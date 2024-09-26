@@ -39,12 +39,45 @@ def freaky_regression(player_count: int):
         return player_count - 1
 
 
-def update_scores(score_list): # this is gonna suck
+def elo_expected_score(lb_player_a: LBEntry, lb_player_b: LBEntry):
+    return 1 / (1 + math.pow(10,(lb_player_b.elo - lb_player_a.elo)/400))
 
-    for player in score_list:
 
+def update_scores(score_list):  # this is gonna suck
+    elo_modifier = freaky_regression(len(score_list))
+    lb = get_leaderboard()
 
     leaderboard_msg = "```\nLeaderboard: \n"
+
+    for player in score_list:
+        lb_player = lb.get_player(player)
+        leaderboard_msg += f"{app.get_username_from_id(player)}: {lb_player.elo} -> "
+
+        elo_add = 0
+
+        for opponent in score_list:
+            if player == opponent:
+                continue
+            lb_opponent = lb.get_player(opponent)
+
+            expected_score = elo_expected_score(lb_player, lb_opponent)
+            if score_list.get(player) > score_list.get(opponent):
+                actual_score = 1
+            elif score_list.get(player) == score_list.get(opponent):
+                actual_score = 0.5
+            else:
+                actual_score = 0
+
+            elo_add += 32 * (actual_score - expected_score) / elo_modifier
+            lb_player.elo += elo_add
+        if lb_player.elo < 100:
+            lb_player.elo = 100
+        leaderboard_msg += f"{lb_player.elo} "
+        if elo_add < 0:
+            leaderboard_msg += f"({elo_add})\n"
+        else:
+            leaderboard_msg += f"(+{elo_add})\n"
+    add_leaderboard(lb)
 
     leaderboard_msg += "```"
     return leaderboard_msg
