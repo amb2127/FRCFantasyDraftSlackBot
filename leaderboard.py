@@ -32,27 +32,39 @@ class LB:
 
 def update_scores(score_list):
     score_data = []
+    elo_data = []
+    lb = get_leaderboard()
 
     for player in score_list:
         score_data.append(score_list.get(player))
+        lb_player = lb.get_player(player)
+        elo_data.append(lb_player.elo)
 
     score_data.sort()
+    elo_data.sort()
 
     mean_score = statistics.mean(score_data)
+    mean_elo = statistics.mean(elo_data)
+
     if len(score_data) > 2:
         stdev_score = statistics.stdev(score_data)
+        stdev_elo = statistics.stdev(elo_data)
     else:
         stdev_score = max(score_data) - min(score_data)
+        stdev_elo = max(elo_data) - min(elo_data)
 
     leaderboard_msg = "```\nLeaderboard: \n"
 
-    lb = get_leaderboard()
     for player in score_list:
         lb_player = lb.get_player(player)
         leaderboard_msg += f"{app.get_username_from_id(player)}: {lb_player.elo} -> "
         elo_add = 0
         if not stdev_score == 0:
             elo_add = round((30 * (score_list.get(player) - mean_score) / stdev_score))
+
+        elo_bias = (lb_player.elo - mean_elo)/stdev_elo
+        elo_add -= elo_bias * 10
+
         lb_player.elo += elo_add
         if lb_player.elo < 100:
             lb_player.elo = 100
