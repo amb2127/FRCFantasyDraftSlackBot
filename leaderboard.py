@@ -1,3 +1,5 @@
+import math
+
 import app
 import pickle
 import statistics
@@ -30,42 +32,44 @@ class LB:
         return new_player
 
 
-def update_scores(score_list):
-    score_data = []
-    elo_data = []
-    lb = get_leaderboard()
-
-    for player in score_list:
-        score_data.append(score_list.get(player))
-        lb_player = lb.get_player(player)
-        elo_data.append(lb_player.elo)
-
-    score_data.sort()
-    elo_data.sort()
-
-    mean_score = statistics.mean(score_data)
-    mean_elo = statistics.mean(elo_data)
-
-    if len(score_data) > 2:
-        stdev_score = statistics.stdev(score_data)
-        stdev_elo = statistics.stdev(elo_data)
+def freaky_regression(player_count: int):
+    if player_count > 4:
+        return 0.547*player_count + 4*math.sqrt(player_count) - 5.7663
     else:
-        stdev_score = max(score_data) - min(score_data)
-        stdev_elo = max(elo_data) - min(elo_data)
+        return player_count - 1
+
+
+def elo_expected_score(lb_player_a: LBEntry, lb_player_b: LBEntry):
+    return 1 / (1 + math.pow(10,(lb_player_b.elo - lb_player_a.elo)/400))
+
+
+def update_scores(score_list):  # this is gonna suck
+    elo_modifier = freaky_regression(len(score_list))
+    lb = get_leaderboard()
 
     leaderboard_msg = "```\nLeaderboard: \n"
 
     for player in score_list:
         lb_player = lb.get_player(player)
         leaderboard_msg += f"{app.get_username_from_id(player)}: {lb_player.elo} -> "
+
         elo_add = 0
-        if not stdev_score == 0:
-            elo_add = round((30 * (score_list.get(player) - mean_score) / stdev_score))
 
-        elo_bias = (lb_player.elo - mean_elo)/stdev_elo
-        elo_add -= elo_bias * 10
+        for opponent in score_list:
+            if player == opponent:
+                continue
+            lb_opponent = lb.get_player(opponent)
 
-        lb_player.elo += elo_add
+            expected_score = elo_expected_score(lb_player, lb_opponent)
+            if score_list.get(player) > score_list.get(opponent):
+                actual_score = 1
+            elif score_list.get(player) == score_list.get(opponent):
+                actual_score = 0.5
+            else:
+                actual_score = 0
+
+            elo_add += 32 * (actual_score - expected_score) / elo_modifier
+            lb_player.elo += elo_add
         if lb_player.elo < 100:
             lb_player.elo = 100
         leaderboard_msg += f"{lb_player.elo} "
